@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -126,58 +125,80 @@ export function HalfYearUpload() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">半年報 PDF 上傳</h1>
-          <p className="text-gray-600">上傳半年期 PALMS 報告以計算紅綠燈狀態</p>
+      {/* 標題區塊 */}
+      <div className="relative overflow-hidden rounded-2xl p-6 text-white shadow-xl" style={{ background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%)' }}>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent" />
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+              <Calculator className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">半年報 PDF 上傳</h1>
+              <p className="text-white/80 text-sm mt-0.5">上傳半年期 PALMS 報告以計算紅綠燈狀態</p>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="bg-white/20 text-white hover:bg-white/30 border-0 rounded-xl"
+            onClick={() => {
+              if (confirm('確定要清除所有紅綠燈資料嗎？')) {
+                setStatuses([]);
+              }
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            清除紅綠燈資料
+          </Button>
         </div>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => {
-            if (confirm('確定要清除所有紅綠燈資料嗎？')) {
-              setStatuses([]);
-            }
-          }}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          清除紅綠燈資料
-        </Button>
       </div>
 
       {/* 目前紅綠燈狀態 */}
       {statuses.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <Calculator className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="font-medium text-blue-800">
-                  目前已有 {statuses.length} 位會員的紅綠燈資料
-                </p>
-                <p className="text-sm text-blue-600">
-                  {getTrafficLightEmoji('green')} {statuses.filter((s) => s.status === 'green').length} 位 |
-                  {getTrafficLightEmoji('yellow')} {statuses.filter((s) => s.status === 'yellow').length} 位 |
-                  {getTrafficLightEmoji('red')} {statuses.filter((s) => s.status === 'red').length} 位 |
-                  {getTrafficLightEmoji('grey')} {statuses.filter((s) => s.status === 'grey').length} 位
-                </p>
+        <div className="card-modern overflow-hidden">
+          <div className="flex items-center gap-4 p-5" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)' }}>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
+              <Calculator className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-blue-800">
+                目前已有 {statuses.length} 位會員的紅綠燈資料
+              </p>
+              <div className="flex items-center gap-3 mt-1 text-sm">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                  {getTrafficLightEmoji('green')} {statuses.filter((s) => s.status === 'green').length}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                  {getTrafficLightEmoji('yellow')} {statuses.filter((s) => s.status === 'yellow').length}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                  {getTrafficLightEmoji('red')} {statuses.filter((s) => s.status === 'red').length}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  {getTrafficLightEmoji('grey')} {statuses.filter((s) => s.status === 'grey').length}
+                </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* 上傳區域 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>上傳半年報 PDF</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="card-modern">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50">
+            <Upload className="h-5 w-5 text-green-600" />
+          </div>
+          <h2 className="font-semibold text-gray-800">上傳半年報 PDF</h2>
+        </div>
+        <div className="p-5">
           <div
             className={`
-              flex min-h-[200px] cursor-pointer flex-col items-center justify-center
-              rounded-lg border-2 border-dashed transition-colors
-              ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary'}
+              flex min-h-[220px] cursor-pointer flex-col items-center justify-center
+              rounded-2xl border-2 border-dashed transition-all duration-300
+              ${isDragging ? 'border-green-500 bg-green-50 scale-[1.02]' : 'border-gray-200 hover:border-green-400 hover:bg-gray-50'}
               ${isLoading ? 'pointer-events-none opacity-50' : ''}
             `}
             onDragOver={(e) => {
@@ -197,53 +218,60 @@ export function HalfYearUpload() {
             />
             {isLoading ? (
               <div className="text-center">
-                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="text-gray-600">解析中...</p>
+                <div className="mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-4 border-green-500 border-t-transparent" />
+                <p className="text-gray-600 font-medium">解析中...</p>
               </div>
             ) : (
               <>
-                <Upload className="mb-4 h-12 w-12 text-gray-400" />
-                <p className="text-lg font-medium">拖曳半年報 PDF 檔案至此處</p>
-                <p className="text-sm text-gray-500">或點擊選擇檔案</p>
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+                  <Upload className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-lg font-semibold text-gray-700">拖曳半年報 PDF 檔案至此處</p>
+                <p className="text-sm text-gray-500 mt-1">或點擊選擇檔案</p>
               </>
             )}
           </div>
 
           {error && (
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-4 text-red-700">
-              <AlertCircle className="h-5 w-5" />
-              {error}
+            <div className="mt-4 flex items-center gap-3 rounded-xl bg-red-50 p-4 text-red-700">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* 預覽與培訓學分輸入 */}
       {parsedData && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>解析結果 - 請輸入培訓學分</CardTitle>
-              <p className="mt-1 text-sm text-gray-600">
-                {parsedData.chapter} | {parsedData.dateFrom} - {parsedData.dateTo}
-              </p>
+        <div className="card-modern overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50">
+                <Calculator className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-800">解析結果 - 請輸入培訓學分</h2>
+                <p className="text-sm text-gray-500">
+                  {parsedData.chapter} | {parsedData.dateFrom} - {parsedData.dateTo}
+                </p>
+              </div>
             </div>
-            <Button onClick={handleConfirm}>
+            <Button onClick={handleConfirm} className="rounded-xl px-5 transition-all duration-300 hover:scale-105 shadow-lg" style={{ background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)' }}>
               <Check className="mr-2 h-4 w-4" />
               計算並儲存
             </Button>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>姓名</TableHead>
-                  <TableHead className="text-center">缺席</TableHead>
-                  <TableHead className="text-center">一對一</TableHead>
-                  <TableHead className="text-center">引薦</TableHead>
-                  <TableHead className="text-center">來賓</TableHead>
-                  <TableHead className="text-center">交易金額</TableHead>
-                  <TableHead className="text-center">培訓學分</TableHead>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold">姓名</TableHead>
+                  <TableHead className="text-center font-semibold">缺席</TableHead>
+                  <TableHead className="text-center font-semibold">一對一</TableHead>
+                  <TableHead className="text-center font-semibold">引薦</TableHead>
+                  <TableHead className="text-center font-semibold">來賓</TableHead>
+                  <TableHead className="text-center font-semibold">交易金額</TableHead>
+                  <TableHead className="text-center font-semibold">培訓學分</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -252,7 +280,7 @@ export function HalfYearUpload() {
                     (t) => t.memberName === member.fullName
                   );
                   return (
-                    <TableRow key={member.id}>
+                    <TableRow key={member.id} className="hover:bg-gray-50 transition-colors">
                       <TableCell className="font-medium">{member.fullName}</TableCell>
                       <TableCell className="text-center">{member.absence}</TableCell>
                       <TableCell className="text-center">{member.oneToOne}</TableCell>
@@ -260,7 +288,7 @@ export function HalfYearUpload() {
                         {member.internalReferralGiven + member.externalReferralGiven}
                       </TableCell>
                       <TableCell className="text-center">{member.guests}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center font-semibold text-amber-600">
                         ${member.transactionValue.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-center">
@@ -268,7 +296,7 @@ export function HalfYearUpload() {
                           type="number"
                           min="0"
                           max="10"
-                          className="w-20 text-center"
+                          className="w-20 text-center rounded-lg"
                           value={trainingInput?.trainingCredits || 0}
                           onChange={(e) =>
                             handleTrainingChange(
@@ -283,61 +311,69 @@ export function HalfYearUpload() {
                 })}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* 現有會員培訓學分調整 */}
       {statuses.length > 0 && !parsedData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>調整培訓學分</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="card-modern overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
+              <Calculator className="h-5 w-5 text-amber-600" />
+            </div>
+            <h2 className="font-semibold text-gray-800">調整培訓學分</h2>
+          </div>
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>姓名</TableHead>
-                  <TableHead className="text-center">燈號</TableHead>
-                  <TableHead className="text-center">總分</TableHead>
-                  <TableHead className="text-center">出席</TableHead>
-                  <TableHead className="text-center">一對一</TableHead>
-                  <TableHead className="text-center">培訓</TableHead>
-                  <TableHead className="text-center">引薦</TableHead>
-                  <TableHead className="text-center">來賓</TableHead>
-                  <TableHead className="text-center">金額</TableHead>
-                  <TableHead className="text-center">培訓學分</TableHead>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold">姓名</TableHead>
+                  <TableHead className="text-center font-semibold">燈號</TableHead>
+                  <TableHead className="text-center font-semibold">總分</TableHead>
+                  <TableHead className="text-center font-semibold">出席</TableHead>
+                  <TableHead className="text-center font-semibold">一對一</TableHead>
+                  <TableHead className="text-center font-semibold">培訓</TableHead>
+                  <TableHead className="text-center font-semibold">引薦</TableHead>
+                  <TableHead className="text-center font-semibold">來賓</TableHead>
+                  <TableHead className="text-center font-semibold">金額</TableHead>
+                  <TableHead className="text-center font-semibold">培訓學分</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {statuses.map((status) => (
-                  <TableRow key={status.id}>
+                  <TableRow key={status.id} className="hover:bg-gray-50 transition-colors">
                     <TableCell className="font-medium">{status.memberName}</TableCell>
                     <TableCell className="text-center">
-                      <span className="inline-flex items-center gap-1">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
+                        status.status === 'green' ? 'bg-green-100 text-green-700' :
+                        status.status === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
+                        status.status === 'red' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
                         {getTrafficLightEmoji(status.status)}
                         {getTrafficLightLabel(status.status)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center font-semibold">
-                      {status.scores.total}
+                    <TableCell className="text-center">
+                      <span className="font-bold text-lg">{status.scores.total}</span>
                     </TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-gray-600">
                       {status.scores.attendance}
                     </TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-gray-600">
                       {status.scores.oneToOne}
                     </TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-gray-600">
                       {status.scores.training}
                     </TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-gray-600">
                       {status.scores.referrals}
                     </TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-gray-600">
                       {status.scores.guests}
                     </TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-gray-600">
                       {status.scores.referralAmount}
                     </TableCell>
                     <TableCell className="text-center">
@@ -345,7 +381,7 @@ export function HalfYearUpload() {
                         type="number"
                         min="0"
                         max="20"
-                        className="w-20 text-center"
+                        className="w-20 text-center rounded-lg"
                         value={status.rawData.trainingCredits}
                         onChange={(e) =>
                           updateTrainingCredits(
@@ -359,8 +395,8 @@ export function HalfYearUpload() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

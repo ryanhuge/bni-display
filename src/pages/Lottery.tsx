@@ -24,6 +24,7 @@ export function Lottery() {
     candidates,
     setCandidates,
     drawWinner,
+    drawMultipleWinners,
     excludeWinners,
     setExcludeWinners,
     getSessionRecords,
@@ -31,7 +32,6 @@ export function Lottery() {
   } = useLotteryStore();
 
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentWinner, setCurrentWinner] = useState<string | null>(null);
   const [currentWinners, setCurrentWinners] = useState<string[]>([]); // 本輪抽出的所有得獎者
   const [showWinner, setShowWinner] = useState(false);
   const [displayName, setDisplayName] = useState<string>('');
@@ -135,14 +135,11 @@ export function Lottery() {
     // 確保音效已初始化
     initAudio();
 
-    // 如果是第一次開始，重置狀態
-    if (currentDrawIndex === 0) {
-      setCurrentWinners([]);
-    }
-
+    // 重置狀態
+    setCurrentWinners([]);
+    setCurrentDrawIndex(0);
     setIsDrawing(true);
     setShowWinner(false);
-    setCurrentWinner(null);
     setDisplayName('');
 
     // 播放背景音樂和滾動音效
@@ -158,7 +155,7 @@ export function Lottery() {
     // 開始動畫
     lastUpdateRef.current = 0;
     animationRef.current = requestAnimationFrame(animateRolling);
-  }, [candidates, animateRolling, isBgmEnabled, isMuted, initAudio, currentDrawIndex]);
+  }, [candidates, animateRolling, isBgmEnabled, isMuted, initAudio]);
 
   // 停止抽獎
   const stopDraw = useCallback(() => {
@@ -171,30 +168,38 @@ export function Lottery() {
     // 停止滾動音效
     stopAudio(rollingAudioRef);
 
-    // 抽出得獎者
-    const winner = drawWinner();
-    setCurrentWinner(winner);
-    setDisplayName(winner || '');
+    // 計算還需要抽出的人數
+    const remainingCount = winnersCount - currentDrawIndex;
+
+    if (remainingCount > 1) {
+      // 一次抽出所有剩餘人數
+      const winners = drawMultipleWinners(remainingCount);
+      if (winners.length > 0) {
+        setCurrentWinners(prev => [...prev, ...winners]);
+        setDisplayName(winners.join('、')); // 顯示所有名字
+        setCurrentDrawIndex(prev => prev + winners.length);
+      }
+    } else {
+      // 只抽一位
+      const winner = drawWinner();
+      if (winner) {
+        setDisplayName(winner);
+        setCurrentWinners(prev => [...prev, winner]);
+        setCurrentDrawIndex(prev => prev + 1);
+      }
+    }
+
     setIsDrawing(false);
     setShowWinner(true);
-
-    // 更新本輪得獎者列表
-    if (winner) {
-      setCurrentWinners(prev => [...prev, winner]);
-      setCurrentDrawIndex(prev => prev + 1);
-    }
 
     // 播放中獎音效
     playAudio(winAudioRef);
 
-    // 如果還沒抽完，不停止背景音樂
-    if (currentDrawIndex + 1 >= winnersCount) {
-      // 停止背景音樂（延遲一點讓中獎音效更突出）
-      setTimeout(() => {
-        stopAudio(bgmAudioRef);
-      }, 3000);
-    }
-  }, [drawWinner, playAudio, stopAudio, currentDrawIndex, winnersCount]);
+    // 停止背景音樂（延遲一點讓中獎音效更突出）
+    setTimeout(() => {
+      stopAudio(bgmAudioRef);
+    }, 3000);
+  }, [drawWinner, drawMultipleWinners, playAudio, stopAudio, currentDrawIndex, winnersCount]);
 
   // 處理抽獎按鈕點擊
   const handleDrawClick = () => {
@@ -205,19 +210,11 @@ export function Lottery() {
     }
   };
 
-  // 繼續抽下一位
-  const handleContinueDraw = () => {
-    setShowWinner(false);
-    setCurrentWinner(null);
-    startDraw();
-  };
-
   // 完成本輪抽獎
   const handleFinishRound = () => {
     setCurrentDrawIndex(0);
     setCurrentWinners([]);
     setShowWinner(false);
-    setCurrentWinner(null);
     stopAudio(bgmAudioRef);
   };
 
@@ -240,7 +237,6 @@ export function Lottery() {
     }
 
     startNewSession();
-    setCurrentWinner(null);
     setCurrentWinners([]);
     setShowWinner(false);
     setDisplayName('');
@@ -269,8 +265,9 @@ export function Lottery() {
   if (!currentReport) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
-        <div className="p-8 border-2" style={{ borderColor: BNI_RED, backgroundColor: `${BNI_RED}10` }}>
-          <Gift className="h-20 w-20" style={{ color: BNI_RED }} />
+        <div className="relative p-8 rounded-2xl" style={{ backgroundColor: `${BNI_RED}10` }}>
+          <div className="absolute inset-0 rounded-2xl animate-pulse" style={{ backgroundColor: `${BNI_RED}05` }} />
+          <Gift className="relative h-20 w-20" style={{ color: BNI_RED }} />
         </div>
         <h2 className="mt-6 text-2xl font-bold" style={{ color: BNI_GRAY }}>尚無報告資料</h2>
         <p className="mt-2 text-gray-500">
@@ -283,27 +280,31 @@ export function Lottery() {
   const totalChances = candidates.reduce((sum, c) => sum + c.chances, 0);
 
   return (
-    <div className="space-y-4">
-      {/* 頂部標題區 - BNI 紅色 */}
+    <div className="space-y-6">
+      {/* 頂部標題區 - 漸層背景 */}
       <div
-        className="flex items-center justify-between p-4 text-white border-2"
-        style={{ backgroundColor: BNI_RED, borderColor: BNI_RED }}
+        className="relative flex items-center justify-between p-6 text-white rounded-2xl overflow-hidden shadow-xl"
+        style={{ background: `linear-gradient(135deg, ${BNI_RED} 0%, #E31837 50%, ${BNI_RED} 100%)` }}
       >
-        <div className="flex items-center gap-4">
-          <div className="bg-white/20 p-3">
+        {/* 裝飾性元素 */}
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-white/5 blur-xl" />
+
+        <div className="relative flex items-center gap-4">
+          <div className="bg-white/20 p-4 rounded-xl backdrop-blur-sm">
             <Sparkles className="h-8 w-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">引薦抽獎</h1>
-            <p className="text-white/80 text-sm">每個引薦 = 1 次抽獎機會</p>
+            <h1 className="text-2xl font-bold tracking-wide">引薦抽獎</h1>
+            <p className="text-white/80 text-sm mt-0.5">每個引薦 = 1 次抽獎機會</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <Button
             variant="secondary"
             size="icon"
             onClick={toggleBgm}
-            className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+            className="bg-white/20 text-white hover:bg-white/30 border-0 rounded-xl transition-all duration-300 hover:scale-105"
             title={isBgmEnabled ? '關閉背景音樂' : '開啟背景音樂'}
           >
             {isBgmEnabled ? <Music className="h-5 w-5" /> : <Music2 className="h-5 w-5 opacity-50" />}
@@ -312,7 +313,7 @@ export function Lottery() {
             variant="secondary"
             size="icon"
             onClick={toggleMute}
-            className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+            className="bg-white/20 text-white hover:bg-white/30 border-0 rounded-xl transition-all duration-300 hover:scale-105"
             title={isMuted ? '開啟音效' : '靜音'}
           >
             {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -320,7 +321,7 @@ export function Lottery() {
           <Button
             variant="secondary"
             onClick={handleNewSession}
-            className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+            className="bg-white/20 text-white hover:bg-white/30 border-0 rounded-xl transition-all duration-300 hover:scale-105"
           >
             <RotateCcw className="mr-2 h-4 w-4" />
             開始新場次
@@ -328,58 +329,49 @@ export function Lottery() {
         </div>
       </div>
 
-      {/* 統計卡片 - 使用表格形式 */}
-      <div className="border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-100">
-              <TableHead className="text-center font-bold">候選人數</TableHead>
-              <TableHead className="text-center font-bold">總抽獎次數</TableHead>
-              <TableHead className="text-center font-bold">已抽出</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Users className="h-5 w-5" style={{ color: BNI_RED }} />
-                  <span className="text-2xl font-bold" style={{ color: BNI_RED }}>{candidates.length}</span>
-                  <span className="text-gray-500">人</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Ticket className="h-5 w-5" style={{ color: BNI_GRAY }} />
-                  <span className="text-2xl font-bold" style={{ color: BNI_GRAY }}>{totalChances}</span>
-                  <span className="text-gray-500">次</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Crown className="h-5 w-5" style={{ color: BNI_GOLD }} />
-                  <span className="text-2xl font-bold" style={{ color: BNI_GOLD }}>{sessionRecords.length}</span>
-                  <span className="text-gray-500">人</span>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+      {/* 統計卡片 */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="card-modern p-5 text-center">
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl mb-3" style={{ backgroundColor: `${BNI_RED}15` }}>
+            <Users className="h-6 w-6" style={{ color: BNI_RED }} />
+          </div>
+          <p className="text-3xl font-bold stat-number" style={{ color: BNI_RED }}>{candidates.length}</p>
+          <p className="text-sm text-gray-500 mt-1">候選人數</p>
+        </div>
+        <div className="card-modern p-5 text-center">
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl mb-3" style={{ backgroundColor: `${BNI_GRAY}15` }}>
+            <Ticket className="h-6 w-6" style={{ color: BNI_GRAY }} />
+          </div>
+          <p className="text-3xl font-bold stat-number" style={{ color: BNI_GRAY }}>{totalChances}</p>
+          <p className="text-sm text-gray-500 mt-1">總抽獎次數</p>
+        </div>
+        <div className="card-modern p-5 text-center">
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl mb-3" style={{ backgroundColor: `${BNI_GOLD}15` }}>
+            <Crown className="h-6 w-6" style={{ color: BNI_GOLD }} />
+          </div>
+          <p className="text-3xl font-bold stat-number" style={{ color: BNI_GOLD }}>{sessionRecords.length}</p>
+          <p className="text-sm text-gray-500 mt-1">已抽出</p>
+        </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-5">
+      <div className="grid gap-6 lg:grid-cols-5">
         {/* 抽獎區 - 佔 3 欄 */}
-        <div className="lg:col-span-3 border">
-          <div className="p-3 border-b bg-gray-50 flex items-center gap-2" style={{ borderColor: '#e5e7eb' }}>
-            <Gift className="h-5 w-5" style={{ color: BNI_RED }} />
-            <span className="font-bold" style={{ color: BNI_RED }}>幸運大轉盤</span>
+        <div className="lg:col-span-3 card-modern overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${BNI_RED}15` }}>
+              <Gift className="h-5 w-5" style={{ color: BNI_RED }} />
+            </div>
+            <span className="font-semibold text-gray-800">幸運大轉盤</span>
           </div>
-          <div className="space-y-4 p-4">
+          <div className="space-y-4 p-5">
             {/* 中獎者展示區 */}
             <div
-              className="relative flex min-h-[250px] items-center justify-center p-6 overflow-hidden transition-colors duration-500 border-2"
+              className="relative flex min-h-[280px] items-center justify-center p-8 overflow-hidden transition-all duration-500 rounded-2xl"
               style={{
-                backgroundColor: showWinner ? BNI_GOLD : BNI_RED,
-                borderColor: showWinner ? BNI_GOLD : BNI_RED,
+                background: showWinner
+                  ? `linear-gradient(135deg, ${BNI_GOLD} 0%, #DAA520 50%, ${BNI_GOLD} 100%)`
+                  : `linear-gradient(135deg, ${BNI_RED} 0%, #E31837 50%, ${BNI_RED} 100%)`,
+                boxShadow: showWinner ? `0 20px 40px ${BNI_GOLD}40` : `0 20px 40px ${BNI_RED}40`,
               }}
             >
               {/* 抽獎中的動態效果 */}
@@ -400,31 +392,41 @@ export function Lottery() {
                 </div>
               )}
 
-              {showWinner && currentWinner ? (
+              {showWinner && currentWinners.length > 0 ? (
                 <div className="relative text-center text-white z-10">
-                  <div className="mb-3 flex justify-center">
-                    <div className="bg-white/30 p-3 animate-bounce">
-                      <Trophy className="h-12 w-12 text-yellow-100" />
+                  <div className="mb-4 flex justify-center">
+                    <div className="bg-white/30 p-4 rounded-2xl animate-bounce backdrop-blur-sm">
+                      <Trophy className="h-14 w-14 text-yellow-100" />
                     </div>
                   </div>
-                  <p className="mb-2 text-lg font-medium text-white/90">
-                    🎉 恭喜中獎 {winnersCount > 1 && `(第 ${currentDrawIndex} 位)`} 🎉
+                  <p className="mb-3 text-lg font-medium text-white/90">
+                    🎉 恭喜中獎！共 {currentWinners.length} 位 🎉
                   </p>
-                  <p className="text-5xl font-black tracking-wider drop-shadow-lg">{currentWinner}</p>
-                  {/* 顯示本輪已抽出的所有得獎者 */}
-                  {currentWinners.length > 1 && (
-                    <div className="mt-4 pt-3 border-t border-white/30">
-                      <p className="text-sm text-white/70 mb-2">本輪得獎者：</p>
-                      <div className="flex flex-wrap justify-center gap-2">
+                  {/* 顯示所有得獎者 */}
+                  {currentWinners.length === 1 ? (
+                    <p className="text-5xl font-black tracking-wider drop-shadow-lg animate-pulse">{currentWinners[0]}</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap justify-center gap-3">
                         {currentWinners.map((w, i) => (
-                          <span key={i} className="px-3 py-1 bg-white/20 text-sm font-medium">
-                            #{i + 1} {w}
-                          </span>
+                          <div
+                            key={i}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-white/20 rounded-xl backdrop-blur-sm animate-pulse"
+                            style={{ animationDelay: `${i * 0.1}s` }}
+                          >
+                            <span
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold"
+                              style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#000' }}
+                            >
+                              {i + 1}
+                            </span>
+                            <span className="text-xl font-bold">{w}</span>
+                          </div>
                         ))}
                       </div>
                     </div>
                   )}
-                  <div className="mt-3 flex justify-center gap-2">
+                  <div className="mt-5 flex justify-center gap-2">
                     {[...Array(5)].map((_, i) => (
                       <Sparkles key={i} className="h-5 w-5 text-yellow-200 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
                     ))}
@@ -432,52 +434,54 @@ export function Lottery() {
                 </div>
               ) : isDrawing ? (
                 <div className="relative text-center z-10">
-                  <div className="mb-3">
-                    <Gift className="mx-auto h-12 w-12 text-white animate-spin" />
+                  <div className="mb-4">
+                    <Gift className="mx-auto h-14 w-14 text-white animate-spin" />
                   </div>
-                  <p className="text-4xl font-bold text-white drop-shadow-lg" style={{ animation: 'pulse 0.3s ease-in-out infinite' }}>
+                  <p className="text-5xl font-black text-white drop-shadow-lg" style={{ animation: 'pulse 0.3s ease-in-out infinite' }}>
                     {displayName || '抽獎中...'}
                   </p>
-                  <p className="mt-3 text-white/70 animate-pulse">點擊下方按鈕停止抽獎</p>
+                  <p className="mt-4 text-white/70 animate-pulse">點擊下方按鈕停止抽獎</p>
                 </div>
               ) : (
                 <div className="relative text-center z-10">
-                  <Gift className="mx-auto mb-3 h-16 w-16 text-white/80" />
-                  <p className="text-xl font-medium text-white/90">點擊下方按鈕開始抽獎</p>
+                  <div className="mb-4">
+                    <Gift className="mx-auto h-16 w-16 text-white/80 float" />
+                  </div>
+                  <p className="text-xl font-semibold text-white/90">點擊下方按鈕開始抽獎</p>
                   <p className="mt-2 text-white/60">祝您好運！</p>
                 </div>
               )}
             </div>
 
             {/* 控制區 */}
-            <div className="border bg-gray-50 p-3 space-y-3">
+            <div className="rounded-xl bg-gray-50 p-4 space-y-4">
               {/* 上排：設定區 */}
               <div className="flex items-center justify-between">
-                <label className="flex cursor-pointer items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors">
                   <input
                     type="checkbox"
                     checked={excludeWinners}
                     onChange={(e) => setExcludeWinners(e.target.checked)}
-                    className="h-4 w-4"
+                    className="h-4 w-4 rounded"
                     style={{ accentColor: BNI_RED }}
                   />
                   <span className="text-sm font-medium text-gray-700">排除已中獎者</span>
                 </label>
 
                 {/* 抽獎人數設定 */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-gray-700">本次抽出</span>
-                  <div className="flex items-center border bg-white">
+                  <div className="flex items-center rounded-lg bg-white shadow-sm overflow-hidden">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={decrementWinnersCount}
                       disabled={winnersCount <= 1 || isDrawing || currentDrawIndex > 0}
-                      className="h-8 w-8 p-0"
+                      className="h-9 w-9 p-0 rounded-none hover:bg-gray-100"
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-8 text-center font-bold text-lg" style={{ color: BNI_RED }}>
+                    <span className="w-10 text-center font-bold text-lg" style={{ color: BNI_RED }}>
                       {winnersCount}
                     </span>
                     <Button
@@ -485,7 +489,7 @@ export function Lottery() {
                       size="sm"
                       onClick={incrementWinnersCount}
                       disabled={winnersCount >= candidates.length || isDrawing || currentDrawIndex > 0}
-                      className="h-8 w-8 p-0"
+                      className="h-9 w-9 p-0 rounded-none hover:bg-gray-100"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -495,35 +499,28 @@ export function Lottery() {
               </div>
 
               {/* 下排：抽獎按鈕區 */}
-              <div className="flex items-center justify-between">
-                {/* 本輪進度 */}
-                {currentDrawIndex > 0 && (
-                  <div className="text-sm" style={{ color: BNI_RED }}>
-                    <span className="font-bold">進度：{currentDrawIndex} / {winnersCount}</span>
-                    {currentDrawIndex < winnersCount && <span className="ml-2 text-gray-500">（還剩 {winnersCount - currentDrawIndex} 位）</span>}
-                  </div>
-                )}
-                {currentDrawIndex === 0 && <div />}
+              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                {/* 提示文字 */}
+                <div className="text-sm text-gray-500">
+                  {winnersCount > 1 && !showWinner && (
+                    <span>將一次抽出 <span className="font-bold" style={{ color: BNI_RED }}>{winnersCount}</span> 位得獎者</span>
+                  )}
+                  {showWinner && currentWinners.length > 0 && (
+                    <span className="font-medium" style={{ color: BNI_GOLD }}>
+                      已抽出 {currentWinners.length} 位得獎者
+                    </span>
+                  )}
+                </div>
 
                 {/* 按鈕區 */}
-                <div className="flex items-center gap-2">
-                  {/* 顯示繼續抽獎或完成按鈕 */}
-                  {showWinner && currentDrawIndex < winnersCount && (
-                    <Button
-                      size="lg"
-                      onClick={handleContinueDraw}
-                      className="px-6 text-base font-bold text-white border-0 transition-all duration-300"
-                      style={{ backgroundColor: BNI_GOLD }}
-                    >
-                      <Play className="mr-2 h-4 w-4" />
-                      繼續抽獎 ({currentDrawIndex}/{winnersCount})
-                    </Button>
-                  )}
-                  {showWinner && currentDrawIndex >= winnersCount && (
+                <div className="flex items-center gap-3">
+                  {/* 完成按鈕 */}
+                  {showWinner && (
                     <Button
                       size="lg"
                       onClick={handleFinishRound}
-                      className="px-6 text-base font-bold text-white border-0 transition-all duration-300 bg-green-600 hover:bg-green-700"
+                      className="px-6 text-base font-bold text-white border-0 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                      style={{ background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)', boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)' }}
                     >
                       ✓ 完成本輪
                     </Button>
@@ -534,8 +531,13 @@ export function Lottery() {
                       size="lg"
                       onClick={handleDrawClick}
                       disabled={candidates.length === 0}
-                      className="px-6 text-base font-bold text-white border-0 min-w-[140px] transition-all duration-300"
-                      style={{ backgroundColor: isDrawing ? BNI_GOLD : BNI_RED }}
+                      className="px-8 text-base font-bold text-white border-0 min-w-[160px] rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                      style={{
+                        background: isDrawing
+                          ? `linear-gradient(135deg, ${BNI_GOLD} 0%, #DAA520 100%)`
+                          : `linear-gradient(135deg, ${BNI_RED} 0%, #E31837 100%)`,
+                        boxShadow: isDrawing ? `0 4px 15px ${BNI_GOLD}40` : `0 4px 15px ${BNI_RED}40`
+                      }}
                     >
                       {isDrawing ? (
                         <>
@@ -545,7 +547,7 @@ export function Lottery() {
                       ) : (
                         <>
                           <Play className="mr-2 h-4 w-4" />
-                          {currentDrawIndex > 0 ? `繼續 (${currentDrawIndex}/${winnersCount})` : '開始抽獎'}
+                          開始抽獎
                         </>
                       )}
                     </Button>
@@ -556,24 +558,29 @@ export function Lottery() {
 
             {/* 本場次記錄 */}
             {sessionRecords.length > 0 && (
-              <div className="border" style={{ borderColor: BNI_RED }}>
-                <div className="p-2 flex items-center gap-2 border-b" style={{ backgroundColor: `${BNI_RED}10`, borderColor: BNI_RED }}>
-                  <Crown className="h-4 w-4" style={{ color: BNI_RED }} />
-                  <span className="font-bold text-sm" style={{ color: BNI_RED }}>本場次中獎記錄</span>
+              <div className="rounded-xl overflow-hidden" style={{ border: `2px solid ${BNI_RED}20` }}>
+                <div className="px-4 py-3 flex items-center gap-2" style={{ background: `linear-gradient(135deg, ${BNI_RED}10 0%, ${BNI_RED}05 100%)` }}>
+                  <Crown className="h-5 w-5" style={{ color: BNI_GOLD }} />
+                  <span className="font-semibold" style={{ color: BNI_RED }}>本場次中獎記錄</span>
                 </div>
                 <div className="p-3">
-                  <Table>
-                    <TableBody>
-                      {sessionRecords.map((record, index) => (
-                        <TableRow key={record.id}>
-                          <TableCell className="w-12 text-center font-bold" style={{ color: BNI_GOLD }}>
-                            #{index + 1}
-                          </TableCell>
-                          <TableCell className="font-medium">{record.winner}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="flex flex-wrap gap-2">
+                    {sessionRecords.map((record, index) => (
+                      <div
+                        key={record.id}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:scale-105"
+                        style={{ background: `linear-gradient(135deg, ${BNI_GOLD}15 0%, ${BNI_GOLD}05 100%)` }}
+                      >
+                        <span
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white"
+                          style={{ background: `linear-gradient(135deg, ${BNI_GOLD} 0%, #DAA520 100%)` }}
+                        >
+                          {index + 1}
+                        </span>
+                        <span className="font-medium text-gray-700">{record.winner}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -581,65 +588,73 @@ export function Lottery() {
         </div>
 
         {/* 候選人名單 - 佔 2 欄 */}
-        <div className="lg:col-span-2 border">
-          <div className="p-3 border-b bg-gray-50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" style={{ color: BNI_GRAY }} />
-              <span className="font-bold" style={{ color: BNI_GRAY }}>抽獎候選人</span>
+        <div className="lg:col-span-2 card-modern overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                <Users className="h-5 w-5 text-gray-600" />
+              </div>
+              <span className="font-semibold text-gray-800">抽獎候選人</span>
             </div>
-            <span className="text-sm text-gray-500">
-              {candidates.length} 人，共 {totalChances} 次機會
+            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              {candidates.length} 人 · {totalChances} 次機會
             </span>
           </div>
-          <div className="max-h-[450px] overflow-auto">
+          <div className="max-h-[480px] overflow-auto">
             <Table>
-              <TableHeader className="sticky top-0 bg-gray-100">
+              <TableHeader className="sticky top-0 bg-gray-50/95 backdrop-blur-sm">
                 <TableRow>
-                  <TableHead className="font-bold">姓名</TableHead>
-                  <TableHead className="text-center font-bold w-20">引薦</TableHead>
-                  <TableHead className="text-center font-bold w-28">機率</TableHead>
+                  <TableHead className="font-semibold text-gray-700">姓名</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-700 w-20">引薦</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-700 w-32">機率</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {candidates
                   .sort((a, b) => b.chances - a.chances)
                   .map((candidate, index) => (
-                    <TableRow key={candidate.name}>
+                    <TableRow key={candidate.name} className="hover:bg-gray-50 transition-colors">
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {index < 3 && (
+                        <div className="flex items-center gap-3">
+                          {index < 3 ? (
                             <span
-                              className="flex h-5 w-5 items-center justify-center text-xs font-bold text-white"
+                              className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm"
                               style={{
-                                backgroundColor: index === 0 ? BNI_GOLD : index === 1 ? '#A0A0A0' : '#CD7F32'
+                                background: index === 0 ? `linear-gradient(135deg, ${BNI_GOLD} 0%, #DAA520 100%)` :
+                                           index === 1 ? 'linear-gradient(135deg, #A0A0A0 0%, #C0C0C0 100%)' :
+                                           'linear-gradient(135deg, #CD7F32 0%, #B87333 100%)'
                               }}
                             >
                               {index + 1}
                             </span>
+                          ) : (
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium text-gray-400 bg-gray-100">
+                              {index + 1}
+                            </span>
                           )}
-                          {candidate.name}
+                          <span className="text-gray-700">{candidate.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
                         <span
-                          className="inline-flex items-center px-2 py-0.5 text-sm font-medium text-white"
-                          style={{ backgroundColor: BNI_RED }}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
+                          style={{ background: `linear-gradient(135deg, ${BNI_RED} 0%, #E31837 100%)` }}
                         >
                           {candidate.chances}
                         </span>
                       </TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <div className="h-2 w-12 overflow-hidden bg-gray-200">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200">
                             <div
-                              className="h-full transition-all"
+                              className="h-full rounded-full transition-all duration-500"
                               style={{
                                 width: `${(candidate.chances / totalChances) * 100}%`,
-                                backgroundColor: BNI_RED
+                                background: `linear-gradient(90deg, ${BNI_RED}, #E31837)`
                               }}
                             />
                           </div>
-                          <span className="text-xs text-gray-600 w-10">
+                          <span className="text-xs font-medium text-gray-500 w-12">
                             {((candidate.chances / totalChances) * 100).toFixed(1)}%
                           </span>
                         </div>

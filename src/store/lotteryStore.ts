@@ -11,6 +11,7 @@ interface LotteryState {
   setCandidates: (candidates: LotteryCandidate[]) => void;
   startNewSession: () => void;
   drawWinner: () => string | null;
+  drawMultipleWinners: (count: number) => string[];
   setExcludeWinners: (exclude: boolean) => void;
   clearRecords: () => void;
   getSessionRecords: () => LotteryRecord[];
@@ -78,6 +79,19 @@ export const useLotteryStore = create<LotteryState>()(
         }));
 
         return winner;
+      },
+
+      drawMultipleWinners: (count: number) => {
+        const winners: string[] = [];
+        for (let i = 0; i < count; i++) {
+          const winner = get().drawWinner();
+          if (winner) {
+            winners.push(winner);
+          } else {
+            break; // 沒有更多候選人了
+          }
+        }
+        return winners;
       },
 
       setExcludeWinners: (exclude) => set({ excludeWinners: exclude }),

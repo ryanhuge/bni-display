@@ -74,8 +74,9 @@ export function Honor() {
   if (statuses.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
-        <div className="rounded-full p-8" style={{ backgroundColor: `${BNI_RED}15` }}>
-          <Award className="h-20 w-20" style={{ color: BNI_RED }} />
+        <div className="relative rounded-2xl p-8" style={{ backgroundColor: `${BNI_RED}10` }}>
+          <div className="absolute inset-0 rounded-2xl animate-pulse" style={{ backgroundColor: `${BNI_RED}05` }} />
+          <Award className="relative h-20 w-20" style={{ color: BNI_RED }} />
         </div>
         <h2 className="mt-6 text-2xl font-bold" style={{ color: BNI_GRAY }}>尚無紅綠燈資料</h2>
         <p className="mt-2 text-gray-500">
@@ -86,14 +87,18 @@ export function Honor() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* 下載按鈕 */}
       <div className="flex justify-end">
         <Button
           onClick={handleDownload}
           variant="outline"
-          className="gap-2"
-          style={{ borderColor: BNI_RED, color: BNI_RED }}
+          className="gap-2 rounded-xl px-5 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          style={{
+            borderColor: BNI_RED,
+            color: BNI_RED,
+            backgroundColor: `${BNI_RED}05`
+          }}
         >
           <Download className="h-4 w-4" />
           下載圖片
