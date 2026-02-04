@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
-import { Award, Download, Users, TrendingUp } from 'lucide-react';
+import { Award, Download, Users, TrendingUp, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import html2canvas from 'html2canvas';
 
@@ -35,7 +35,7 @@ function getWeeklyQuote(): string {
 }
 
 export function Honor() {
-  const { statuses, getMembersByStatus, chapter } = useTrafficLightStore();
+  const { statuses, getMembersByStatus, chapter, dateFrom, dateTo } = useTrafficLightStore();
   const captureRef = useRef<HTMLDivElement>(null);
 
   const greenMembers = getMembersByStatus('green');
@@ -43,6 +43,14 @@ export function Honor() {
 
   // 取得本周的激勵話語
   const weeklyQuote = useMemo(() => getWeeklyQuote(), []);
+
+  // 格式化統計區間顯示
+  const dateRangeText = useMemo(() => {
+    if (dateFrom && dateTo) {
+      return `統計區間：${dateFrom} ~ ${dateTo}`;
+    }
+    return '';
+  }, [dateFrom, dateTo]);
 
   const handleDownload = async () => {
     if (!captureRef.current) return;
@@ -129,9 +137,26 @@ export function Honor() {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '0.05em', margin: 0 }}>
             BNI {chapter}分會 紅綠燈榮耀榜
           </h1>
-          <p style={{ marginTop: '0.5rem', fontSize: '1rem', opacity: 0.9, margin: 0 }}>
+          <p style={{ marginTop: '0.5rem', fontSize: '1rem', opacity: 0.9 }}>
             {weeklyQuote}
           </p>
+          {dateRangeText && (
+            <div style={{
+              marginTop: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              borderRadius: '9999px',
+              padding: '0.375rem 1rem',
+              width: 'fit-content',
+              margin: '0.75rem auto 0'
+            }}>
+              <Calendar style={{ width: '0.875rem', height: '0.875rem' }} />
+              <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{dateRangeText}</span>
+            </div>
+          )}
         </div>
 
         {/* 統計區 */}

@@ -28,7 +28,7 @@ interface MemberTrainingInput {
 }
 
 export function HalfYearUpload() {
-  const { statuses, addOrUpdateMember, updateTrainingCredits, setChapter, setStatuses } = useTrafficLightStore();
+  const { statuses, addOrUpdateMember, updateTrainingCredits, setChapter, setDateRange, setStatuses } = useTrafficLightStore();
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +107,8 @@ export function HalfYearUpload() {
     if (parsedData) {
       // 保存分會名稱
       setChapter(parsedData.chapter);
+      // 保存統計區間
+      setDateRange(parsedData.dateFrom, parsedData.dateTo);
 
       parsedData.members.forEach((member) => {
         const trainingInput = trainingInputs.find(

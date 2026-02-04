@@ -7,7 +7,10 @@ import { generateId } from '@/lib/utils';
 interface TrafficLightState {
   statuses: TrafficLightStatus[];
   chapter: string; // 分會名稱
+  dateFrom: string; // 統計區間起始日期
+  dateTo: string; // 統計區間結束日期
   setChapter: (chapter: string) => void;
+  setDateRange: (dateFrom: string, dateTo: string) => void;
   setStatuses: (statuses: TrafficLightStatus[]) => void;
   updateStatus: (id: string, data: Partial<TrafficLightStatus>) => void;
   addOrUpdateMember: (memberName: string, rawData: TrafficLightRawData) => void;
@@ -22,8 +25,12 @@ export const useTrafficLightStore = create<TrafficLightState>()(
     (set, get) => ({
       statuses: [],
       chapter: '威鋒', // 預設分會名稱
+      dateFrom: '', // 統計區間起始日期
+      dateTo: '', // 統計區間結束日期
 
       setChapter: (chapter) => set({ chapter }),
+
+      setDateRange: (dateFrom, dateTo) => set({ dateFrom, dateTo }),
 
       setStatuses: (statuses) => set({ statuses }),
 

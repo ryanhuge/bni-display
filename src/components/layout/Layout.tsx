@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useWeeklyStore } from '@/store/weeklyStore';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { cn } from '@/lib/utils';
 import { SYSTEM_SIGNATURE } from '@/config/system';
 import {
@@ -34,7 +35,9 @@ const adminNavigation = [
 export function Layout() {
   const location = useLocation();
   const { currentReport } = useWeeklyStore();
-  const chapterName = currentReport?.chapter || '威鋒';
+  const { chapter: trafficLightChapter } = useTrafficLightStore();
+  // 優先使用週報的分會名稱，其次使用紅綠燈的分會名稱，最後使用預設值
+  const chapterName = currentReport?.chapter || trafficLightChapter || '威鋒';
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%)' }}>
