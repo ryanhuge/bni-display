@@ -74,7 +74,9 @@ export const useWeeklyStore = create<WeeklyState>()(
 
       syncFromApi: async () => {
         try {
-          const res = await fetch('/api/weekly-report');
+          const res = await fetch('/api/weekly-report', {
+              headers: { 'x-api-key': import.meta.env.VITE_API_READ_KEY || '' },
+            });
           if (!res.ok) return;
           const data = await res.json();
           if (data && data.members) {

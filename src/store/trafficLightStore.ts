@@ -143,7 +143,9 @@ export const useTrafficLightStore = create<TrafficLightState>()(
 
       syncFromApi: async () => {
         try {
-          const res = await fetch('/api/traffic-light');
+          const res = await fetch('/api/traffic-light', {
+              headers: { 'x-api-key': import.meta.env.VITE_API_READ_KEY || '' },
+            });
           if (!res.ok) return;
           const data = await res.json();
           if (data && data.results && data.results.length > 0) {
