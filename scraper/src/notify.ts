@@ -65,7 +65,13 @@ export async function sendNotification(
       </tr>
       ${memberRows}
     </table>
-    <p><a href="${displayUrl}/display/honor">查看紅綠燈榮耀榜</a></p>
+    <h3>📌 快速連結</h3>
+    <ul>
+      <li><a href="${displayUrl}/display/honor">🚦 紅綠燈榮耀榜</a></li>
+      <li><a href="${displayUrl}/display/report">📊 週報展示</a></li>
+      <li><a href="${displayUrl}/lottery">🎰 抽獎頁面</a></li>
+      <li><a href="${displayUrl}/admin/weekly">⚙️ 後台管理</a></li>
+    </ul>
     <hr>
     <p style="color:#888;font-size:12px">此郵件由 BNI 爬蟲系統自動發送</p>
   `;
