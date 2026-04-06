@@ -1,8 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
-import { verifyApiKey } from './_lib/auth';
 
 const KV_KEY = 'bni:half-year-report';
+
+function verifyApiKey(req: VercelRequest): boolean {
+  const apiKey = req.headers['x-api-key'];
+  return !!process.env.API_SECRET_KEY && apiKey === process.env.API_SECRET_KEY;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const redis = new Redis({
