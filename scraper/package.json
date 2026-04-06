@@ -1,0 +1,26 @@
+{
+  "name": "bni-scraper",
+  "version": "1.0.0",
+  "description": "BNI Connect PALMS 報表自動爬蟲",
+  "type": "module",
+  "scripts": {
+    "scrape": "tsx src/index.ts --weekly",
+    "scrape:half-year": "tsx src/index.ts --half-year",
+    "scrape:all": "tsx src/index.ts --all",
+    "start": "tsx src/index.ts --daemon"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.3",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

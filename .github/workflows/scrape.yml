@@ -1,0 +1,41 @@
+name: BNI PALMS 自動爬蟲
+
+on:
+  schedule:
+    # 每週二 UTC 04:00 = 台灣時間中午 12:00
+    - cron: '0 4 * * 2'
+  workflow_dispatch: # 允許手動觸發
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout scraper
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: scraper
+        run: npm ci
+
+      - name: Run scraper
+        working-directory: scraper
+        env:
+          BNI_USERNAME: ${{ secrets.BNI_USERNAME }}
+          BNI_PASSWORD: ${{ secrets.BNI_PASSWORD }}
+          BNI_ORG_ID: '12962'
+          BNI_REGION_ID: '7700'
+          BNI_COUNTRY_ID: '7699'
+          API_URL: 'https://bni-display.vercel.app'
+          API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          DISPLAY_URL: 'https://bni-display.vercel.app'
+        run: npx tsx src/index.ts --all

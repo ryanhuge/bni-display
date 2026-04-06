@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 
 # Portable builds (包含 Node.js 執行檔，檔案太大)
 BNI_System
