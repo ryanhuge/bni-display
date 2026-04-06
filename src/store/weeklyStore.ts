@@ -14,6 +14,7 @@ interface WeeklyState {
   addReport: (report: Omit<WeeklyReport, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateReport: (id: string, data: Partial<WeeklyReport>) => void;
   deleteReport: (id: string) => void;
+  syncFromApi: () => Promise<void>;
   getReportSummary: () => {
     totalInternalReferrals: number;
     totalExternalReferrals: number;
@@ -69,6 +70,29 @@ export const useWeeklyStore = create<WeeklyState>()(
           currentReport:
             state.currentReport?.id === id ? null : state.currentReport,
         }));
+      },
+
+      syncFromApi: async () => {
+        try {
+          const res = await fetch('/api/weekly-report');
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.members) {
+            const report: WeeklyReport = {
+              id: data.id || generateId(),
+              chapter: data.chapter || '',
+              dateFrom: data.dateFrom || '',
+              dateTo: data.dateTo || '',
+              generatedAt: data.generatedAt || '',
+              members: data.members || [],
+              createdAt: new Date(data.createdAt || Date.now()),
+              updatedAt: new Date(data.updatedAt || Date.now()),
+            };
+            set({ currentReport: report, reports: [report] });
+          }
+        } catch {
+          // API 不可用時 fallback 到 localStorage
+        }
       },
 
       getReportSummary: () => {

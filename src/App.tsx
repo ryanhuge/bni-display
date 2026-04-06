@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Home } from '@/pages/Home';
@@ -7,8 +8,18 @@ import { Lottery } from '@/pages/Lottery';
 import { WeeklyUpload } from '@/pages/admin/WeeklyUpload';
 import { HalfYearUpload } from '@/pages/admin/HalfYearUpload';
 import { Settings } from '@/pages/admin/Settings';
+import { useWeeklyStore } from '@/store/weeklyStore';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 
 function App() {
+  const syncWeekly = useWeeklyStore((s) => s.syncFromApi);
+  const syncTrafficLight = useTrafficLightStore((s) => s.syncFromApi);
+
+  useEffect(() => {
+    syncWeekly();
+    syncTrafficLight();
+  }, [syncWeekly, syncTrafficLight]);
+
   return (
     <BrowserRouter>
       <Routes>

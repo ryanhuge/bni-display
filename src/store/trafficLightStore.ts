@@ -18,6 +18,7 @@ interface TrafficLightState {
   manualOverrideStatus: (memberName: string, status: 'green' | 'yellow' | 'red' | 'grey') => void;
   removeOverride: (memberName: string) => void;
   getMembersByStatus: (status: 'green' | 'yellow' | 'red' | 'grey') => TrafficLightStatus[];
+  syncFromApi: () => Promise<void>;
 }
 
 export const useTrafficLightStore = create<TrafficLightState>()(
@@ -138,6 +139,29 @@ export const useTrafficLightStore = create<TrafficLightState>()(
 
       getMembersByStatus: (status) => {
         return get().statuses.filter((s) => s.status === status);
+      },
+
+      syncFromApi: async () => {
+        try {
+          const res = await fetch('/api/traffic-light');
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.results && data.results.length > 0) {
+            const statuses: TrafficLightStatus[] = data.results.map((r: any) => ({
+              id: generateId(),
+              memberId: generateId(),
+              memberName: r.memberName,
+              status: r.status,
+              scores: r.scores,
+              rawData: r.rawData,
+              isManualOverride: false,
+              updatedAt: new Date(r.updatedAt || Date.now()),
+            }));
+            set({ statuses });
+          }
+        } catch {
+          // API 不可用時 fallback 到 localStorage
+        }
       },
     }),
     {
