@@ -9,14 +9,20 @@ export function formatDate(date: Date): string {
 }
 
 /**
- * 取得當月日期範圍（週報用）
+ * 取得週報日期範圍（上上週二到本週二）
  */
-export function getMonthlyRange(): { startDate: string; endDate: string } {
+export function getWeeklyRange(): { startDate: string; endDate: string } {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const day = now.getDay(); // 0=日 1=一 2=二 ...
+  const diffToTuesday = (day + 7 - 2) % 7;
+  const thisTuesday = new Date(now);
+  thisTuesday.setDate(now.getDate() - diffToTuesday);
+  // 上上週二（往前推 14 天）
+  const twoWeeksAgo = new Date(thisTuesday);
+  twoWeeksAgo.setDate(thisTuesday.getDate() - 14);
   return {
-    startDate: formatDate(start),
-    endDate: formatDate(now),
+    startDate: formatDate(twoWeeksAgo),
+    endDate: formatDate(thisTuesday),
   };
 }
 

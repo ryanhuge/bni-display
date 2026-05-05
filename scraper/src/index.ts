@@ -4,7 +4,7 @@ import { authenticate } from './auth.js';
 import { fetchPalmsReport } from './fetch-report.js';
 import { parseXls } from './parse-xls.js';
 import { calculateTrafficLight } from './traffic-light.js';
-import { getMonthlyRange, getHalfYearRange, calculateWeeks } from './date-utils.js';
+import { getWeeklyRange, getHalfYearRange, calculateWeeks } from './date-utils.js';
 import { saveWeeklyReport, saveHalfYearReport, saveTrafficLightResults } from './store.js';
 import { sendNotification } from './notify.js';
 
@@ -22,7 +22,7 @@ const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 12 * * 2';
  */
 async function scrapeWeekly(accessToken: string) {
   console.log('\n=== 抓取週報 ===');
-  const { startDate, endDate } = getMonthlyRange();
+  const { startDate, endDate } = getWeeklyRange();
 
   const buffer = await fetchPalmsReport({
     accessToken,
